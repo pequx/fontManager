@@ -41,11 +41,11 @@ Element.prototype.setAttributes = function (attrs) {
 
 function layout() {
     let container = document.createElement('div');
-    let file = document.createElement('input');
+    // let file = document.createElement('input');
     let info = document.createElement('span');
     let message = document.createElement('div');
 
-    container.appendChild(file);
+    // container.appendChild(file);
     container.appendChild(info);
     container.appendChild(message);
 
@@ -70,7 +70,7 @@ function layout() {
     container.appendChild(glyphContainer);
 
     container.setAttributes({'class' : 'container'});
-    file.setAttributes({'id' : 'file', 'type' : 'file'});
+    // file.setAttributes({'id' : 'file', 'type' : 'file'});
     info.setAttributes({'class' : 'info', 'id' : 'font-name'});
     message.setAttributes({'id' : 'message'});
     paginationContainer.setAttributes({'id' : 'pagination-container'});
@@ -94,25 +94,47 @@ document.body.appendChild(layout());
 var fontFileName = './assets/fonts/font.otf';
 document.getElementById('font-name').innerHTML = fontFileName.split('/')[3];
 
-var fileButton = document.getElementById('file');
-fileButton.addEventListener('change', onReadFile, false);
+// var fileButton = document.getElementById('file');
+// fileButton.addEventListener('change', onReadFile, false);
 
 enableHighDPICanvas('glyph-bg');
 enableHighDPICanvas('glyph');
 
 prepareGlyphList();
+
 opentype.load(fontFileName, function(err, font) {
     var amount, glyph, ctx, x, y, fontSize;
     if (err) {
         showErrorMessage(err.toString());
         return;
     }
+    // filterGlyphs(font);
     onFontLoaded(font);
 });
 
 // ================================
 // DRAWING, HANDLING AND STUFF...
 // ================================
+
+function filterGlyphs(font) {
+    let glyphs = font.glyphs.glyphs;
+
+    Object.keys(glyphs).forEach(key => {
+        let glyph = glyphs[key];
+        let name = glyph.name,
+            length = name.length;
+
+        if (length < 2) {
+            delete glyphs[key];
+        }
+
+
+        console.log(key);          // the name of the current key.
+    });
+
+    return font;
+
+}
 
 function enableHighDPICanvas(canvas) {
     if (typeof canvas === 'string') {
@@ -222,6 +244,7 @@ function renderGlyphItem(canvas, glyphIndex) {
     ctx.font = '9px sans-serif';
     ctx.fillText(glyphIndex, 1, cellHeight-1);
     var glyph = window.font.glyphs.get(glyphIndex),
+        name = window.font.glyphs.get(name),
         glyphWidth = glyph.advanceWidth * fontScale,
         xmin = (cellWidth - glyphWidth)/2,
         xmax = (cellWidth + glyphWidth)/2,
@@ -471,44 +494,8 @@ function prepareGlyphList() {
         canvas.height = cellHeight;
         canvas.className = 'item';
         canvas.id = 'g'+i;
-            canvas.addEventListener('click', cellSelect, false);
+        canvas.addEventListener('click', cellSelect, false);
         enableHighDPICanvas(canvas);
         parent.insertBefore(canvas, marker);
     }
 }
-
-
-// opentype.load('assets/fonts/font.otf', function (err, font) {
-//     if (err) {
-//         console.log(err);
-//     }renderGlyphItem
-//
-//     var canvas = document.getElementById('glyph'),
-//         ctx = canvas.getContext('2d'),
-//         width = canvas.width / pixelRatio,
-//         height = canvas.height / pixelRatio;
-//     ctx.clearRect(0, 0, width, height);
-//
-//     if(glyphIndex < 0) return;
-//     var glyph = font.glyphs.get(glyphIndex),
-//         glyphWidth = glyph.advanceWidth * glyphScale,
-//         xmin = (width - glyphWidth)/2,
-//         xmax = (width + glyphWidth)/2,
-//         x0 = xmin,
-//         markSize = 10;
-//     ctx.fillStyle = '#606060';
-//     ctx.fillRect(xmin-markSize+1, glyphBaseline, markSize, 1);
-//     ctx.fillRect(xmin, glyphBaseline, 1, markSize);
-//     ctx.fillRect(xmax, glyphBaseline, markSize, 1);
-//     ctx.fillRect(xmax, glyphBaseline, 1, markSize);
-//     ctx.textAlign = 'center';
-//     ctx.fillText('0', xmin, glyphBaseline+markSize+10);
-//     ctx.fillText(glyph.advanceWidth, xmax, glyphBaseline+markSize+10);
-//     ctx.fillStyle = '#000000';
-//     var path = glyph.getPath(x0, glyphBaseline, glyphSize);
-//     path.fill = '#808080';
-//     path.stroke = '#000000';
-//     path.strokeWidth = 1.5;
-//     drawPathWithArrows(ctx, path);
-//     glyph.drawPoints(ctx, x0, glyphBaseline, glyphSize);
-// });
