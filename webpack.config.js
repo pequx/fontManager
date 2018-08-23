@@ -94,8 +94,18 @@ module.exports = {
                 }
             },
 
+            // FONTS
             {
                 test: /\.(otf)$/,
+                loader: 'file-loader',
+                options: {
+                    name: '[path][name].[ext]'
+                }
+            },
+
+            // TAGS
+            {
+                test: /\.(json)$/,
                 loader: 'file-loader',
                 options: {
                     name: '[path][name].[ext]'

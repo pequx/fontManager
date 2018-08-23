@@ -91,11 +91,22 @@ document.body.appendChild(layout());
 // INIT
 // ================================
 
-var fontFileName = './assets/fonts/font.otf';
+const fontFileName = './assets/fonts/font.otf';
+const tagsFileName = 'http://0.0.0.0:8080/assets/tags/icons.json';
 document.getElementById('font-name').innerHTML = fontFileName.split('/')[3];
 
 // var fileButton = document.getElementById('file');
 // fileButton.addEventListener('change', onReadFile, false);
+
+opentype.Font.prototype.tagForEachGlyph = function(tags, callback) {
+    let glyphs = this.glyphs.glyphs;
+
+    for (let glyph in glyphs) {
+        let current = glyphs[glyph];
+
+        callback.call(this, current);
+    }
+};
 
 enableHighDPICanvas('glyph-bg');
 enableHighDPICanvas('glyph');
@@ -103,38 +114,48 @@ enableHighDPICanvas('glyph');
 prepareGlyphList();
 
 opentype.load(fontFileName, function(err, font) {
-    var amount, glyph, ctx, x, y, fontSize;
+    let amount, glyph, ctx, x, y, fontSize, tags;
     if (err) {
         showErrorMessage(err.toString());
         return;
     }
-    // filterGlyphs(font);
+
+    readXmlDocument(tagsFileName, function(responseText) {
+        let tags = JSON.parse(responseText);
+
+        font.tagForEachGlyph(tags, function(callback) {
+            // console.log(glyph);
+            console.log(callback);
+        });
+    });
+
     onFontLoaded(font);
 });
+
+
+function readXmlDocument(url, callback) {
+    let xmlhttp;
+    if (window.XMLHttpRequest) {
+        xmlhttp = new XMLHttpRequest();
+    } else {
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState === 4 && xmlhttp.status === 200) {
+            if (typeof callback === 'function' )
+                callback(xmlhttp.responseText);
+        }
+    };
+
+    xmlhttp.open('GET', url, true);
+    xmlhttp.send();
+}
+
 
 // ================================
 // DRAWING, HANDLING AND STUFF...
 // ================================
-
-function filterGlyphs(font) {
-    let glyphs = font.glyphs.glyphs;
-
-    Object.keys(glyphs).forEach(key => {
-        let glyph = glyphs[key];
-        let name = glyph.name,
-            length = name.length;
-
-        if (length < 2) {
-            delete glyphs[key];
-        }
-
-
-        console.log(key);          // the name of the current key.
-    });
-
-    return font;
-
-}
 
 function enableHighDPICanvas(canvas) {
     if (typeof canvas === 'string') {
@@ -484,6 +505,7 @@ function cellSelect(event) {
         displayGlyphData(glyphIndex);
     }
 }
+
 
 function prepareGlyphList() {
     var marker = document.getElementById('glyph-list-end'),
