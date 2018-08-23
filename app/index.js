@@ -173,7 +173,7 @@ function displayGlyphData(glyphIndex) {
         container.innerHTML = '';
         return;
     }
-    var glyph = font.glyphs.get(glyphIndex),
+    var glyph = window.font.glyphs.get(glyphIndex),
         html = '<dl>';
     html += '<dt>name</dt><dd>'+glyph.name+'</dd>';
 
@@ -329,7 +329,7 @@ function displayGlyph(glyphIndex) {
         height = canvas.height / pixelRatio;
     ctx.clearRect(0, 0, width, height);
     if(glyphIndex < 0) return;
-    var glyph = font.glyphs.get(glyphIndex),
+    var glyph = window.font.glyphs.get(glyphIndex),
         glyphWidth = glyph.advanceWidth * glyphScale,
         xmin = (width - glyphWidth)/2,
         xmax = (width + glyphWidth)/2,
@@ -452,11 +452,11 @@ function onReadFile(e) {
 
 
 function cellSelect(event) {
-    if (!font) return;
+    if (!window.font) return;
     var firstGlyphIndex = pageSelected*cellCount,
         cellIndex = +event.target.id.substr(1),
         glyphIndex = firstGlyphIndex + cellIndex;
-    if (glyphIndex < font.numGlyphs) {
+    if (glyphIndex < window.font.numGlyphs) {
         displayGlyph(glyphIndex);
         displayGlyphData(glyphIndex);
     }
