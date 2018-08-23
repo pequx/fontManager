@@ -8,6 +8,21 @@ import _ from 'lodash';
 import * as opentype from 'opentype.js';
 
 // ================================
+// CONFIG
+// ================================
+
+const cellCount = 100,
+    cellWidth = 44,
+    cellHeight = 40,
+    cellMarginTop = 1,
+    cellMarginBottom = 8,
+    cellMarginLeftRight = 1,
+    glyphMargin = 5,
+    pixelRatio = window.devicePixelRatio || 1;
+
+let pageSelected, font, fontScale, fontSize, fontBaseline, glyphScale, glyphSize, glyphBaseline;
+
+// ================================
 // PAGE LAYOUT
 // ================================
 
@@ -65,7 +80,7 @@ function layout() {
     glyphDisplay.setAttributes({'id' : 'glyph-display'});
     glyphBg.setAttributes({'id' : 'glyph-bg', 'width' : 500, 'height' : 500});
     glyph.setAttributes({'id' : 'glyph', 'width': 500, 'height' : 500});
-    glyphData.setAttributes({'glyphData' : 'glyph-data'});
+    glyphData.setAttributes({'id' : 'glyph-data'});
 
     return container;
 }
@@ -98,18 +113,6 @@ opentype.load(fontFileName, function(err, font) {
 // ================================
 // DRAWING, HANDLING AND STUFF...
 // ================================
-
-const cellCount = 100,
-    cellWidth = 44,
-    cellHeight = 40,
-    cellMarginTop = 1,
-    cellMarginBottom = 8,
-    cellMarginLeftRight = 1,
-    glyphMargin = 5,
-    pixelRatio = window.devicePixelRatio || 1;
-
-let pageSelected, font, fontScale, fontSize, fontBaseline, glyphScale, glyphSize, glyphBaseline;
-
 
 function enableHighDPICanvas(canvas) {
     if (typeof canvas === 'string') {
@@ -213,12 +216,12 @@ function renderGlyphItem(canvas, glyphIndex) {
     var cellMarkSize = 4;
     var ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, cellWidth, cellHeight);
-    if (glyphIndex >= font.numGlyphs) return;
+    if (glyphIndex >= window.font.numGlyphs) return;
 
     ctx.fillStyle = '#606060';
     ctx.font = '9px sans-serif';
     ctx.fillText(glyphIndex, 1, cellHeight-1);
-    var glyph = font.glyphs.get(glyphIndex),
+    var glyph = window.font.glyphs.get(glyphIndex),
         glyphWidth = glyph.advanceWidth * fontScale,
         xmin = (cellWidth - glyphWidth)/2,
         xmax = (cellWidth + glyphWidth)/2,
@@ -352,32 +355,6 @@ function displayGlyph(glyphIndex) {
 }
 
 
-function renderGlyphItem(canvas, glyphIndex) {
-    var cellMarkSize = 4;
-    var ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, cellWidth, cellHeight);
-    if (glyphIndex >= font.numGlyphs) return;
-
-    ctx.fillStyle = '#606060';
-    ctx.font = '9px sans-serif';
-    ctx.fillText(glyphIndex, 1, cellHeight-1);
-    var glyph = font.glyphs.get(glyphIndex),
-        glyphWidth = glyph.advanceWidth * fontScale,
-        xmin = (cellWidth - glyphWidth)/2,
-        xmax = (cellWidth + glyphWidth)/2,
-        x0 = xmin;
-
-    ctx.fillStyle = '#a0a0a0';
-    ctx.fillRect(xmin-cellMarkSize+1, fontBaseline, cellMarkSize, 1);
-    ctx.fillRect(xmin, fontBaseline, 1, cellMarkSize);
-    ctx.fillRect(xmax, fontBaseline, cellMarkSize, 1);
-    ctx.fillRect(xmax, fontBaseline, 1, cellMarkSize);
-
-    ctx.fillStyle = '#000000';
-    glyph.draw(ctx, x0, fontBaseline, fontSize);
-}
-
-
 function pageSelect(event) {
     document.getElementsByClassName('page-selected')[0].className = '';
     displayGlyphPage(+event.target.id.substr(1));
@@ -390,16 +367,16 @@ function initGlyphDisplay() {
         h = glyphBgCanvas.height / pixelRatio,
         glyphW = w - glyphMargin*2,
         glyphH = h - glyphMargin*2,
-        head = font.tables.head,
+        head = window.font.tables.head,
         maxHeight = head.yMax - head.yMin,
         ctx = glyphBgCanvas.getContext('2d');
 
     glyphScale = Math.min(glyphW/(head.xMax - head.xMin), glyphH/maxHeight);
-    glyphSize = glyphScale * font.unitsPerEm;
+    glyphSize = glyphScale * window.font.unitsPerEm;
     glyphBaseline = glyphMargin + glyphH * head.yMax / maxHeight;
 
     function hline(text, yunits) {
-        ypx = glyphBaseline - yunits * glyphScale;
+        var ypx = glyphBaseline - yunits * glyphScale;
         ctx.fillText(text, 2, ypx+3);
         ctx.fillRect(80, ypx, w, 1);
     }
@@ -407,12 +384,12 @@ function initGlyphDisplay() {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#a0a0a0';
     hline('Baseline', 0);
-    hline('yMax', font.tables.head.yMax);
-    hline('yMin', font.tables.head.yMin);
-    hline('Ascender', font.tables.hhea.ascender);
-    hline('Descender', font.tables.hhea.descender);
-    hline('Typo Ascender', font.tables.os2.sTypoAscender);
-    hline('Typo Descender', font.tables.os2.sTypoDescender);
+    hline('yMax', window.font.tables.head.yMax);
+    hline('yMin', window.font.tables.head.yMin);
+    hline('Ascender', window.font.tables.hhea.ascender);
+    hline('Descender', window.font.tables.hhea.descender);
+    hline('Typo Ascender', window.font.tables.os2.sTypoAscender);
+    hline('Typo Descender', window.font.tables.os2.sTypoDescender);
 }
 
 
@@ -494,7 +471,7 @@ function prepareGlyphList() {
         canvas.height = cellHeight;
         canvas.className = 'item';
         canvas.id = 'g'+i;
-        canvas.addEventListener('click', cellSelect, false);
+            canvas.addEventListener('click', cellSelect, false);
         enableHighDPICanvas(canvas);
         parent.insertBefore(canvas, marker);
     }
