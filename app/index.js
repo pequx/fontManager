@@ -8,7 +8,95 @@ import _ from 'lodash';
 import * as opentype from 'opentype.js';
 
 // ================================
-// START YOUR APP HERE
+// PAGE LAYOUT
+// ================================
+
+Element.prototype.setAttributes = function (attrs) {
+    for (var idx in attrs) {
+        //@todo: add has own property check
+        if ((idx === 'styles' || idx === 'style') && typeof attrs[idx] === 'object') {
+            for (var prop in attrs[idx]){this.style[prop] = attrs[idx][prop];}
+        } else if (idx === 'html') {
+            this.innerHTML = attrs[idx];
+        } else {
+            this.setAttribute(idx, attrs[idx]);
+        }
+    }
+};
+
+function layout() {
+    let container = document.createElement('div');
+    let file = document.createElement('input');
+    let info = document.createElement('span');
+    let message = document.createElement('div');
+
+    container.appendChild(file);
+    container.appendChild(info);
+    container.appendChild(message);
+
+    let paginationContainer = document.createElement('div');
+    let pagination = document.createElement('pagination');
+    let glyphListEnd = document.createElement('div');
+
+    paginationContainer.appendChild(pagination);
+    paginationContainer.appendChild(glyphListEnd);
+    container.appendChild(paginationContainer);
+
+    let glyphContainer = document.createElement('div');
+    let glyphDisplay = document.createElement('div');
+    let glyphBg = document.createElement('canvas');
+    let glyph = document.createElement('canvas');
+    let glyphData = document.createElement('div');
+
+    glyphDisplay.appendChild(glyphBg);
+    glyphDisplay.appendChild(glyph);
+    glyphContainer.appendChild(glyphDisplay);
+    glyphContainer.appendChild(glyphData);
+    container.appendChild(glyphContainer);
+
+    container.setAttributes({'class' : 'container'});
+    file.setAttributes({'id' : 'file', 'type' : 'file'});
+    info.setAttributes({'class' : 'info', 'id' : 'font-name'});
+    message.setAttributes({'id' : 'message'});
+    paginationContainer.setAttributes({'id' : 'pagination-container'});
+    pagination.setAttributes({'id' : 'pagination'});
+    glyphListEnd.setAttributes({'id' : 'glyph-list-end'});
+    glyphContainer.setAttributes({'id' : 'glyph-container'});
+    glyphDisplay.setAttributes({'id' : 'glyph-display'});
+    glyphBg.setAttributes({'id' : 'glyph-bg', 'width' : 500, 'height' : 500});
+    glyph.setAttributes({'id' : 'glyph', 'width': 500, 'height' : 500});
+    glyphData.setAttributes({'glyphData' : 'glyph-data'});
+
+    return container;
+}
+
+document.body.appendChild(layout());
+
+// ================================
+// INIT
+// ================================
+
+var fontFileName = '0.0.0.0:8080/assets/fonts/font.otf';
+document.getElementById('font-name').innerHTML = fontFileName.split('/')[3];
+
+var fileButton = document.getElementById('file');
+fileButton.addEventListener('change', onReadFile, false);
+
+enableHighDPICanvas('glyph-bg');
+enableHighDPICanvas('glyph');
+
+prepareGlyphList();
+opentype.load(fontFileName, function(err, font) {
+    var amount, glyph, ctx, x, y, fontSize;
+    if (err) {
+        showErrorMessage(err.toString());
+        return;
+    }
+    onFontLoaded(font);
+});
+
+// ================================
+// DRAWING, HANDLING AND STUFF...
 // ================================
 
 const cellCount = 100,
@@ -412,90 +500,6 @@ function prepareGlyphList() {
     }
 }
 
-
-// var fontFileName = 'assets/fonts/font.otf';
-// document.getElementById('font-name').innerHTML = fontFileName.split('/')[1];
-//
-// var fileButton = document.getElementById('file');
-// fileButton.addEventListener('change', onReadFile, false);
-//
-// enableHighDPICanvas('glyph-bg');
-// enableHighDPICanvas('glyph');
-//
-// prepareGlyphList();
-// opentype.load(fontFileName, function(err, font) {
-//     var amount, glyph, ctx, x, y, fontSize;
-//     if (err) {
-//         showErrorMessage(err.toString());
-//         return;
-//     }
-//     onFontLoaded(font);
-// });
-
-
-Element.prototype.setAttributes = function (attrs) {
-    for (var idx in attrs) {
-        //@todo: add has own property check
-        if ((idx === 'styles' || idx === 'style') && typeof attrs[idx] === 'object') {
-            for (var prop in attrs[idx]){this.style[prop] = attrs[idx][prop];}
-        } else if (idx === 'html') {
-            this.innerHTML = attrs[idx];
-        } else {
-            this.setAttribute(idx, attrs[idx]);
-        }
-    }
-};
-
-
-function layout() {
-    let container = document.createElement('div');
-    let explain = document.createElement('div');
-    let file = document.createElement('input');
-    let info = document.createElement('span');
-    let message = document.createElement('div');
-
-    container.appendChild(explain);
-    container.appendChild(file);
-    container.appendChild(info);
-    container.appendChild(message);
-
-    let paginationContainer = document.createElement('div');
-    let pagination = document.createElement('pagination');
-    let glyphListEnd = document.createElement('div');
-
-    paginationContainer.appendChild(pagination);
-    paginationContainer.appendChild(glyphListEnd);
-    container.appendChild(paginationContainer);
-
-    let glyphContainer = document.createElement('div');
-    let glyphDisplay = document.createElement('div');
-    let glyphBg = document.createElement('canvas');
-    let glyph = document.createElement('canvas');
-    let glyphData = document.createElement('div');
-
-    glyphDisplay.appendChild(glyphBg);
-    glyphDisplay.appendChild(glyph);
-    glyphContainer.appendChild(glyphDisplay);
-    glyphContainer.appendChild(glyphData);
-
-    container.setAttributes({'class' : 'container'});
-    explain.setAttributes({'class': 'explain'});
-    file.setAttributes({'id' : 'file', 'type' : 'file'});
-    info.setAttributes({'class' : 'info', 'id' : 'font-name'});
-    message.setAttributes({'id' : 'message'});
-    paginationContainer.setAttributes({'id' : 'pagination-container'});
-    pagination.setAttributes({'id' : 'pagination'});
-    glyphListEnd.setAttributes({'id' : 'glyph-list-end'});
-    glyphContainer.setAttributes({'id' : 'glyph-container'});
-    glyphDisplay.setAttributes({'id' : 'glyph-display'});
-    glyphBg.setAttributes({'id' : 'glyph-display', 'width' : 500, 'height' : 500});
-    glyph.setAttributes({'id' : 'glyph', 'width': 500, 'height' : 500});
-    glyphData.setAttributes({'glyphData' : 'glyph-data'});
-
-    return container;
-}
-
-document.body.appendChild(layout());
 
 // opentype.load('assets/fonts/font.otf', function (err, font) {
 //     if (err) {
