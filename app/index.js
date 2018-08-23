@@ -35,7 +35,7 @@ function layout() {
     container.appendChild(message);
 
     let paginationContainer = document.createElement('div');
-    let pagination = document.createElement('pagination');
+    let pagination = document.createElement('span');
     let glyphListEnd = document.createElement('div');
 
     paginationContainer.appendChild(pagination);
@@ -76,7 +76,7 @@ document.body.appendChild(layout());
 // INIT
 // ================================
 
-var fontFileName = '0.0.0.0:8080/assets/fonts/font.otf';
+var fontFileName = './assets/fonts/font.otf';
 document.getElementById('font-name').innerHTML = fontFileName.split('/')[3];
 
 var fileButton = document.getElementById('file');
@@ -427,13 +427,13 @@ function onFontLoaded(font) {
     fontSize = fontScale * font.unitsPerEm;
     fontBaseline = cellMarginTop + h * head.yMax / maxHeight;
 
-    var pagination = document.getElementById("pagination");
+    var pagination = document.getElementById('pagination');
     pagination.innerHTML = '';
     var fragment = document.createDocumentFragment();
     var numPages = Math.ceil(font.numGlyphs / cellCount);
     for(var i = 0; i < numPages; i++) {
         var link = document.createElement('span');
-        var lastIndex = Math.min(font.numGlyphs-1``, (i+1)*cellCount-1);
+        var lastIndex = Math.min(font.numGlyphs-1, (i+1)*cellCount-1);
         link.textContent = i*cellCount + '-' + lastIndex;
         link.id = 'p' + i;
         link.addEventListener('click', pageSelect, false);
