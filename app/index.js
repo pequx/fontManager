@@ -121,6 +121,42 @@ function displayGlyphData(glyphIndex) {
 }
 
 
+function renderGlyphItem(canvas, glyphIndex) {
+    var cellMarkSize = 4;
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, cellWidth, cellHeight);
+    if (glyphIndex >= font.numGlyphs) return;
+
+    ctx.fillStyle = '#606060';
+    ctx.font = '9px sans-serif';
+    ctx.fillText(glyphIndex, 1, cellHeight-1);
+    var glyph = font.glyphs.get(glyphIndex),
+        glyphWidth = glyph.advanceWidth * fontScale,
+        xmin = (cellWidth - glyphWidth)/2,
+        xmax = (cellWidth + glyphWidth)/2,
+        x0 = xmin;
+
+    ctx.fillStyle = '#a0a0a0';
+    ctx.fillRect(xmin-cellMarkSize+1, fontBaseline, cellMarkSize, 1);
+    ctx.fillRect(xmin, fontBaseline, 1, cellMarkSize);
+    ctx.fillRect(xmax, fontBaseline, cellMarkSize, 1);
+    ctx.fillRect(xmax, fontBaseline, 1, cellMarkSize);
+
+    ctx.fillStyle = '#000000';
+    glyph.draw(ctx, x0, fontBaseline, fontSize);
+}
+
+
+function displayGlyphPage(pageNum) {
+    pageSelected = pageNum;
+    document.getElementById('p'+pageNum).className = 'page-selected';
+    var firstGlyph = pageNum * cellCount;
+    for(var i = 0; i < cellCount; i++) {
+        renderGlyphItem(document.getElementById('g'+i), firstGlyph+i);
+    }
+}
+
+
 const arrowLength = 10,
     arrowAperture = 4;
 
@@ -292,6 +328,41 @@ function initGlyphDisplay() {
 }
 
 
+function onFontLoaded(font) {
+    window.font = font;
+
+    var w = cellWidth - cellMarginLeftRight * 2,
+        h = cellHeight - cellMarginTop - cellMarginBottom,
+        head = font.tables.head,
+        maxHeight = head.yMax - head.yMin;
+    fontScale = Math.min(w/(head.xMax - head.xMin), h/maxHeight);
+    fontSize = fontScale * font.unitsPerEm;
+    fontBaseline = cellMarginTop + h * head.yMax / maxHeight;
+
+    var pagination = document.getElementById("pagination");
+    pagination.innerHTML = '';
+    var fragment = document.createDocumentFragment();
+    var numPages = Math.ceil(font.numGlyphs / cellCount);
+    for(var i = 0; i < numPages; i++) {
+        var link = document.createElement('span');
+        var lastIndex = Math.min(font.numGlyphs-1``, (i+1)*cellCount-1);
+        link.textContent = i*cellCount + '-' + lastIndex;
+        link.id = 'p' + i;
+        link.addEventListener('click', pageSelect, false);
+        fragment.appendChild(link);
+        // A white space allows to break very long lines into multiple lines.
+        // This is needed for fonts with thousands of glyphs.
+        fragment.appendChild(document.createTextNode(' '));
+    }
+    pagination.appendChild(fragment);
+
+    initGlyphDisplay();
+    displayGlyphPage(0);
+    displayGlyph(-1);
+    displayGlyphData(-1);
+}
+
+
 function onReadFile(e) {
     document.getElementById('font-name').innerHTML = '';
     var file = e.target.files[0];
@@ -342,24 +413,24 @@ function prepareGlyphList() {
 }
 
 
-var fontFileName = 'fonts/Roboto-Black.ttf';
-document.getElementById('font-name').innerHTML = fontFileName.split('/')[1];
-
-var fileButton = document.getElementById('file');
-fileButton.addEventListener('change', onReadFile, false);
-
-enableHighDPICanvas('glyph-bg');
-enableHighDPICanvas('glyph');
-
-prepareGlyphList();
-opentype.load(fontFileName, function(err, font) {
-    var amount, glyph, ctx, x, y, fontSize;
-    if (err) {
-        showErrorMessage(err.toString());
-        return;
-    }
-    onFontLoaded(font);
-});
+// var fontFileName = 'assets/fonts/font.otf';
+// document.getElementById('font-name').innerHTML = fontFileName.split('/')[1];
+//
+// var fileButton = document.getElementById('file');
+// fileButton.addEventListener('change', onReadFile, false);
+//
+// enableHighDPICanvas('glyph-bg');
+// enableHighDPICanvas('glyph');
+//
+// prepareGlyphList();
+// opentype.load(fontFileName, function(err, font) {
+//     var amount, glyph, ctx, x, y, fontSize;
+//     if (err) {
+//         showErrorMessage(err.toString());
+//         return;
+//     }
+//     onFontLoaded(font);
+// });
 
 
 Element.prototype.setAttributes = function (attrs) {
@@ -376,41 +447,60 @@ Element.prototype.setAttributes = function (attrs) {
 };
 
 
-function component() {
-    let container = document.createElement('div').setAttribute('class', 'container');
-    let explain = document.createElement('div').setAttribute('class', 'explain');
+function layout() {
+    let container = document.createElement('div');
+    let explain = document.createElement('div');
     let file = document.createElement('input');
     let info = document.createElement('span');
-    let message = document.createElement('div').setAttribute('id', 'message');
-    let glyphListEnd = document.createElement('div').setAttribute('id', 'glyph-list-end');
+    let message = document.createElement('div');
 
-    let glyphContainer = document.createElement('div').setAttribute('id', 'glyph-container');
+    container.appendChild(explain);
+    container.appendChild(file);
+    container.appendChild(info);
+    container.appendChild(message);
 
-    let glyphDisplay = document.createElement('div').setAttribute('id', 'glyph-display');
+    let paginationContainer = document.createElement('div');
+    let pagination = document.createElement('pagination');
+    let glyphListEnd = document.createElement('div');
+
+    paginationContainer.appendChild(pagination);
+    paginationContainer.appendChild(glyphListEnd);
+    container.appendChild(paginationContainer);
+
+    let glyphContainer = document.createElement('div');
+    let glyphDisplay = document.createElement('div');
     let glyphBg = document.createElement('canvas');
     let glyph = document.createElement('canvas');
+    let glyphData = document.createElement('div');
 
-    let glyphData = document.createElement('div').setAttribute('id', 'glyph-data');
+    glyphDisplay.appendChild(glyphBg);
+    glyphDisplay.appendChild(glyph);
+    glyphContainer.appendChild(glyphDisplay);
+    glyphContainer.appendChild(glyphData);
 
+    container.setAttributes({'class' : 'container'});
+    explain.setAttributes({'class': 'explain'});
     file.setAttributes({'id' : 'file', 'type' : 'file'});
     info.setAttributes({'class' : 'info', 'id' : 'font-name'});
+    message.setAttributes({'id' : 'message'});
+    paginationContainer.setAttributes({'id' : 'pagination-container'});
+    pagination.setAttributes({'id' : 'pagination'});
+    glyphListEnd.setAttributes({'id' : 'glyph-list-end'});
+    glyphContainer.setAttributes({'id' : 'glyph-container'});
+    glyphDisplay.setAttributes({'id' : 'glyph-display'});
     glyphBg.setAttributes({'id' : 'glyph-display', 'width' : 500, 'height' : 500});
-    glyph.setAttribute({'id' : 'glyph', 'width': 500, 'height' : 500});
-    
+    glyph.setAttributes({'id' : 'glyph', 'width': 500, 'height' : 500});
+    glyphData.setAttributes({'glyphData' : 'glyph-data'});
 
-    // container.innerHTML = _.join(['Hello', 'webpack'], ' ');
-
-    return element;
+    return container;
 }
 
-
-
-document.body.appendChild(component());
+document.body.appendChild(layout());
 
 // opentype.load('assets/fonts/font.otf', function (err, font) {
 //     if (err) {
 //         console.log(err);
-//     }
+//     }renderGlyphItem
 //
 //     var canvas = document.getElementById('glyph'),
 //         ctx = canvas.getContext('2d'),
@@ -441,4 +531,3 @@ document.body.appendChild(component());
 //     drawPathWithArrows(ctx, path);
 //     glyph.drawPoints(ctx, x0, glyphBaseline, glyphSize);
 // });
-

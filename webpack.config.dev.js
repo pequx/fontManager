@@ -3,7 +3,7 @@ const webpackConfig = require('./webpack.config');
 
 module.exports = merge(webpackConfig, {
 
-    devtool: 'eval',
+    devtool: 'inline-source-map',
 
     output: {
         pathinfo: true,
@@ -13,6 +13,6 @@ module.exports = merge(webpackConfig, {
 
     devServer: {
         host: '0.0.0.0'
-    }
+    },
 
 });
