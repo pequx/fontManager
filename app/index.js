@@ -102,8 +102,7 @@ opentype.Glyph.prototype.addTags = function(tags, label) {
     this.label = label;
 };
 
-
-opentype.Font.prototype.tagForEachGlyph = function(tags, callback) {
+opentype.Font.prototype.tagGlyphs = function(tags) {
     let glyphs = this.glyphs.glyphs;
     for (let glyph in glyphs) {
         let current = glyphs[glyph];
@@ -116,27 +115,41 @@ opentype.Font.prototype.tagForEachGlyph = function(tags, callback) {
             }
         }
     }
-    callback.call(this, glyphs);
+    // callback.call(this, Object.keys(glyphs).length);
 };
+
+Object.prototype.renameProperty = function (oldName, newName) {
+    // Do nothing if the names are the same
+    if (oldName == newName) {
+        return this;
+    }
+    // Check for the old property name to avoid a ReferenceError in strict mode.
+    if (this.hasOwnProperty(oldName)) {
+        this[newName] = this[oldName];
+        this[newName].index = newName;
+        delete this[oldName];
+    }
+    return this;
+};
+
 
 opentype.Font.prototype.filterGlyphs = function(callback) {
-    let glyphs = this.glyphs.glyphs;
+    let glyphs = this.glyphs.glyphs,
+        counter = 0;
     for (let glyph in glyphs) {
         let current = glyphs[glyph];
-        const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hypen|period|at)|^[a-zA-Z]$/s;
+        const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hyphen|period|at|.notdef)|^[a-zA-Z]$/s;
         let match = current.name.match(regex);
         if (match === null) { continue; }
-        if (match.length > 0) {
-            delete glyphs[glyph];
-        }
+        let indexes = [];
+        if (match.length > 0) { delete glyphs[glyph]; }
     }
-    this.glyphs.length = Object.keys(this.glyphs.glyphs).length;
+    for (let glyph in glyphs) {
+        glyphs.renameProperty(glyph, counter);
+        counter++;
+    }
+    callback.call(this, Object.keys(glyphs).length);
 };
-
-enableHighDPICanvas('glyph-bg');
-enableHighDPICanvas('glyph');
-
-prepareGlyphList();
 
 
 opentype.load(fontFileName, function(err, font) {
@@ -147,11 +160,19 @@ opentype.load(fontFileName, function(err, font) {
     }
     readXmlDocument(tagsFileName, function(responseText) {
         let tags = JSON.parse(responseText);
-        font.filterGlyphs();
-        font.tagForEachGlyph(tags);
+        font.filterGlyphs(function(callback) {
+            this.nGlyphs = this.numGlyphs = this.numberOfHMetrics = callback;
+            this.glyphs.length = callback;
+        });
+        font.tagGlyphs(tags);
+        onFontLoaded(font);
     });
-    onFontLoaded(font);
 });
+
+
+enableHighDPICanvas('glyph-bg');
+enableHighDPICanvas('glyph');
+prepareGlyphList();
 
 
 function findByProp(o, prop, val, retprop) {
@@ -480,10 +501,6 @@ function initGlyphDisplay() {
 
 
 function onFontLoaded(font) {
-    // font.filterGlyphs(function(callback) {
-    //    console.log(callback);
-    // });
-
     window.font = font;
 
     var w = cellWidth - cellMarginLeftRight * 2,
