@@ -11,9 +11,9 @@ import * as opentype from 'opentype.js';
 // CONFIG
 // ================================
 
-const cellCount = 100,
-    cellWidth = 44,
-    cellHeight = 40,
+const cellCount = 25,
+    cellWidth = 100,
+    cellHeight = 100,
     cellMarginTop = 1,
     cellMarginBottom = 8,
     cellMarginLeftRight = 1,
@@ -70,15 +70,19 @@ let layout = function() {
 
     let searchContainer = document.createElement('div');
     let search = document.createElement('input');
+    let searchResultsContainer = document.createElement('div');
+    let searchResults = document.createElement('div');
 
     searchContainer.appendChild(search);
-    container.appendChild(search);
+    searchResultsContainer.appendChild(searchResults);
+    container.appendChild(searchContainer);
+    container.appendChild(searchResultsContainer);
 
     let paginationContainer = document.createElement('div');
     let pagination = document.createElement('span');
     let glyphListEnd = document.createElement('div');
 
-    paginationContainer.appendChild(pagination);
+    container.appendChild(pagination);
     paginationContainer.appendChild(glyphListEnd);
     container.appendChild(paginationContainer);
 
@@ -100,6 +104,8 @@ let layout = function() {
     message.setAttributes({'id' : 'message'});
     searchContainer.setAttributes({'id' : 'search-container'});
     search.setAttributes({'id' : 'search'});
+    searchResults.setAttributes({'id' : 'search-results'});
+    searchResultsContainer.setAttributes({'id' : 'search-results-container'});
     paginationContainer.setAttributes({'id' : 'pagination-container'});
     pagination.setAttributes({'id' : 'pagination'});
     glyphListEnd.setAttributes({'id' : 'glyph-list-end'});
@@ -122,7 +128,10 @@ document.getElementById('search').addEventListener('keyup', search, false);
 function search(event) {
     let glyphs = window.font.glyphs.glyphs;
     let value = event.target.value;
-    let results = [];
+    let results = document.getElementById('search-results');
+    let matched = [];
+
+    if (value.length < 3 ) { return; }
 
     for (let glyph in glyphs) {
         let currentGlyph = glyphs[glyph],
@@ -132,18 +141,43 @@ function search(event) {
         for (let i = 0; i < tags.length; i++) {
             let tag = tags[i];
             if (tag.indexOf(value) === 0) {
-                // console.log(value);
-                results[tag] = {
+                matched[tag] = {
                     'glyph': parseInt(glyph)
                 };
             }
         }
     }
 
+    for (let match in matched) {
+        let currentMatch = matched[match].glyph;
+        let id = 'g'+currentMatch;
+        if (!currentMatch) { continue; }
+        let item = document.getElementById(id);
+        if (item) { continue; }
+        let canvas = document.createElement('canvas');
+        canvas.setAttributes({'id': id, 'class' : 'item'});
+        results.appendChild(canvas);
 
-
-    console.log(results);
+        canvas.addEventListener('click', cellSelect, false);
+        renderGlyphItem(canvas, currentMatch);
+    }
 };
+
+let searchResults;
+
+// function hideGlyphItem(canvas, glyphIndex) {
+//     // console.log(glyphIndex);
+//     let collection = document.getElementsByClassName('item');
+//     for (let item in collection) {
+//         let current = collection[item],
+//             id = 'g'+glyphIndex;
+//         if (current.id !== id) {
+//             let results = document.getElementById('search-results');
+//         }
+//     }
+//     searchResults = collection;
+//     console.log(searchResults);
+// }
 
 // ================================
 // INIT
@@ -541,7 +575,8 @@ function onFontLoaded(font) {
         head = font.tables.head,
         maxHeight = head.yMax - head.yMin;
 
-    fontScale = Math.min(w/(head.xMax - head.xMin), h/maxHeight);
+    // fontScale = Math.min(w/(head.xMax - head.xMin), h/maxHeight);
+    fontScale = Math.min(w/maxHeight, h/maxHeight)/1.666;
     fontSize = fontScale * font.unitsPerEm;
     fontBaseline = cellMarginTop + h * head.yMax / maxHeight;
 

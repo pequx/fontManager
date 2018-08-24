@@ -19,7 +19,7 @@ body {
 }
 
 .container {
-    width: 940px;
+    width: 98%;
     margin-left: auto;
     margin-right: auto;
 }
@@ -65,7 +65,9 @@ canvas.text {
 }
 
 .info {
-    float: right;
+    right: 0;
+    padding-right: 50px;
+    position: absolute;
     font-size: 11px;
     color: #999;
 }
@@ -144,27 +146,66 @@ a {
 
 /* Glyph Inspector */
 
-#pagination span {
-    margin: 0 0.3em;
-    color: #505050;
-    cursor: pointer;
+#pagination {
+    display: flex;
+    flex-wrap: wrap;
+    //flex-direction: row;
+
+    &-container {
+        display: flex;
+        flex-wrap: wrap;
+    }
+    span {
+        flex-grow: 1;
+        margin: 0 0.3em;
+        color: #505050;
+        cursor: pointer;
+        min-width: 50px;
+        min-height: 30px;
+
+        &.page-selected {
+            font-weight: bold;
+            color: black;
+            background-color: #e0e0e0;
+        }
+    }
 }
 
-#pagination span.page-selected {
-    font-weight: bold;
-    color: black;
+#search {
+    flex-grow: 1;
+    height: 50px;
+    font-size: 150%;
+
+    &-container {
+        display: flex;
+        flex-direction: row;
+    }
+
+    &-results {
+        &-container {
+            display: flex;
+            flex-direction: row;
+        }
+    }
+
+    .item {
+        flex-grow: 1;
+    }
 }
 
-canvas.item {
-    float: left;
-    border: solid 1px #a0a0a0;
-    margin-right: -1px;
-    margin-bottom: -1px;
-    cursor: pointer;
-}
 
-canvas.item:hover {
-    background-color: #e0e0e0;
+canvas {
+    &.item {
+        float: left;
+        border: solid 1px #a0a0a0;
+        margin-right: -1px;
+        margin-bottom: -1px;
+        cursor: pointer;
+
+        &:hover {
+            background-color: #e0e0e0;
+        }
+    }
 }
 
 #glyph-list-end {
