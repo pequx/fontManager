@@ -26,7 +26,7 @@ let pageSelected, font, fontScale, fontSize, fontBaseline, glyphScale, glyphSize
 // PAGE LAYOUT
 // ================================
 
-Element.prototype.setAttributes = function (attrs) {
+Object.prototype.setAttributes = function (attrs) {
     for (var idx in attrs) {
         //@todo: add has own property check
         if ((idx === 'styles' || idx === 'style') && typeof attrs[idx] === 'object') {
@@ -94,18 +94,43 @@ document.body.appendChild(layout());
 const fontFileName = './assets/fonts/font.otf';
 const tagsFileName = 'http://0.0.0.0:8080/assets/tags/icons.json';
 document.getElementById('font-name').innerHTML = fontFileName.split('/')[3];
-
 // var fileButton = document.getElementById('file');
 // fileButton.addEventListener('change', onReadFile, false);
 
+opentype.Glyph.prototype.addTags = function(tags, label) {
+    this.tags = tags;
+    this.label = label;
+};
+
+
 opentype.Font.prototype.tagForEachGlyph = function(tags, callback) {
     let glyphs = this.glyphs.glyphs;
-
     for (let glyph in glyphs) {
         let current = glyphs[glyph];
+        if (current.unicode === undefined) { continue; }
 
-        callback.call(this, current);
+        for (let tag in tags) {
+            let currentTag = tags[tag];
+            if (parseInt(currentTag.unicode, 16) === current.unicode) {
+                current.addTags(currentTag.search.terms, currentTag.label);
+            }
+        }
     }
+    callback.call(this, glyphs);
+};
+
+opentype.Font.prototype.filterGlyphs = function(callback) {
+    let glyphs = this.glyphs.glyphs;
+    for (let glyph in glyphs) {
+        let current = glyphs[glyph];
+        const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hypen|period|at)|^[a-zA-Z]$/s;
+        let match = current.name.match(regex);
+        if (match === null) { continue; }
+        if (match.length > 0) {
+            delete glyphs[glyph];
+        }
+    }
+    this.glyphs.length = Object.keys(this.glyphs.glyphs).length;
 };
 
 enableHighDPICanvas('glyph-bg');
@@ -113,24 +138,38 @@ enableHighDPICanvas('glyph');
 
 prepareGlyphList();
 
+
 opentype.load(fontFileName, function(err, font) {
     let amount, glyph, ctx, x, y, fontSize, tags;
     if (err) {
         showErrorMessage(err.toString());
         return;
     }
-
     readXmlDocument(tagsFileName, function(responseText) {
         let tags = JSON.parse(responseText);
-
-        font.tagForEachGlyph(tags, function(callback) {
-            // console.log(glyph);
-            console.log(callback);
-        });
+        font.filterGlyphs();
+        font.tagForEachGlyph(tags);
     });
-
     onFontLoaded(font);
 });
+
+
+function findByProp(o, prop, val, retprop) {
+    if(o==null) return false;
+    if( o[prop] === val ){
+        return (retprop) ? o[retprop] : o;
+    }
+    var result, p;
+    for (p in o) {
+        if( o.hasOwnProperty(p) && typeof o[p] === 'object' ) {
+            result = findByProp(o[p], prop, val);
+            if(result){
+                return (retprop) ? result[retprop] : result;
+            }
+        }
+    }
+    return (retprop) ? result[retprop] : result;
+}
 
 
 function readXmlDocument(url, callback) {
@@ -149,6 +188,9 @@ function readXmlDocument(url, callback) {
     };
 
     xmlhttp.open('GET', url, true);
+    xmlhttp.setRequestHeader('Access-Control-Allow-Origin', '0.0.0.0');
+    xmlhttp.setRequestHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+    xmlhttp.setRequestHeader('Access-Control-Allow-Headers', 'Origin, Content-Type, X-Auth-Token');
     xmlhttp.send();
 }
 
@@ -438,20 +480,27 @@ function initGlyphDisplay() {
 
 
 function onFontLoaded(font) {
+    // font.filterGlyphs(function(callback) {
+    //    console.log(callback);
+    // });
+
     window.font = font;
 
     var w = cellWidth - cellMarginLeftRight * 2,
         h = cellHeight - cellMarginTop - cellMarginBottom,
         head = font.tables.head,
         maxHeight = head.yMax - head.yMin;
+
     fontScale = Math.min(w/(head.xMax - head.xMin), h/maxHeight);
     fontSize = fontScale * font.unitsPerEm;
     fontBaseline = cellMarginTop + h * head.yMax / maxHeight;
 
     var pagination = document.getElementById('pagination');
     pagination.innerHTML = '';
+
     var fragment = document.createDocumentFragment();
     var numPages = Math.ceil(font.numGlyphs / cellCount);
+
     for(var i = 0; i < numPages; i++) {
         var link = document.createElement('span');
         var lastIndex = Math.min(font.numGlyphs-1, (i+1)*cellCount-1);
