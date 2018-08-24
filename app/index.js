@@ -23,7 +23,7 @@ const cellCount = 100,
 let pageSelected, font, fontScale, fontSize, fontBaseline, glyphScale, glyphSize, glyphBaseline;
 
 // ================================
-// PAGE LAYOUT
+// HELPERS
 // ================================
 
 Object.prototype.setAttributes = function (attrs) {
@@ -54,8 +54,11 @@ Object.prototype.renameProperty = function (oldName, newName) {
     return this;
 };
 
+// ================================
+// PAGE LAYOUT
+// ================================
 
-function layout() {
+let layout = function() {
     let container = document.createElement('div');
     // let file = document.createElement('input');
     let info = document.createElement('span');
@@ -106,15 +109,41 @@ function layout() {
     glyph.setAttributes({'id' : 'glyph', 'width': 500, 'height' : 500});
     glyphData.setAttributes({'id' : 'glyph-data'});
 
-    search.addEventListener('keyup', function() {
-        console.log('keuyup');
-    });
-
     return container;
-}
+};
 
 document.body.appendChild(layout());
+document.getElementById('search').addEventListener('keyup', search, false);
 
+// ================================
+// SEARCH HANDLER
+// ================================
+
+function search(event) {
+    let glyphs = window.font.glyphs.glyphs;
+    let value = event.target.value;
+    let results = [];
+
+    for (let glyph in glyphs) {
+        let currentGlyph = glyphs[glyph],
+            tags = currentGlyph.tags;
+        if (!tags) { continue; }
+
+        for (let i = 0; i < tags.length; i++) {
+            let tag = tags[i];
+            if (tag.indexOf(value) === 0) {
+                // console.log(value);
+                results[tag] = {
+                    'glyph': parseInt(glyph)
+                };
+            }
+        }
+    }
+
+
+
+    console.log(results);
+};
 
 // ================================
 // INIT
@@ -146,7 +175,6 @@ opentype.Font.prototype.tagGlyphs = function(tags) {
     }
     // callback.call(this, Object.keys(glyphs).length);
 };
-
 
 opentype.Font.prototype.filterGlyphs = function(callback) {
     let glyphs = this.glyphs.glyphs,
