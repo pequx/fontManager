@@ -65,6 +65,12 @@ function layout() {
     container.appendChild(info);
     container.appendChild(message);
 
+    let searchContainer = document.createElement('div');
+    let search = document.createElement('input');
+
+    searchContainer.appendChild(search);
+    container.appendChild(search);
+
     let paginationContainer = document.createElement('div');
     let pagination = document.createElement('span');
     let glyphListEnd = document.createElement('div');
@@ -89,6 +95,8 @@ function layout() {
     // file.setAttributes({'id' : 'file', 'type' : 'file'});
     info.setAttributes({'class' : 'info', 'id' : 'font-name'});
     message.setAttributes({'id' : 'message'});
+    searchContainer.setAttributes({'id' : 'search-container'});
+    search.setAttributes({'id' : 'search'});
     paginationContainer.setAttributes({'id' : 'pagination-container'});
     pagination.setAttributes({'id' : 'pagination'});
     glyphListEnd.setAttributes({'id' : 'glyph-list-end'});
@@ -98,10 +106,15 @@ function layout() {
     glyph.setAttributes({'id' : 'glyph', 'width': 500, 'height' : 500});
     glyphData.setAttributes({'id' : 'glyph-data'});
 
+    search.addEventListener('keyup', function() {
+        console.log('keuyup');
+    });
+
     return container;
 }
 
 document.body.appendChild(layout());
+
 
 // ================================
 // INIT
@@ -176,24 +189,6 @@ enableHighDPICanvas('glyph');
 prepareGlyphList();
 
 
-function findByProp(o, prop, val, retprop) {
-    if(o==null) return false;
-    if( o[prop] === val ){
-        return (retprop) ? o[retprop] : o;
-    }
-    var result, p;
-    for (p in o) {
-        if( o.hasOwnProperty(p) && typeof o[p] === 'object' ) {
-            result = findByProp(o[p], prop, val);
-            if(result){
-                return (retprop) ? result[retprop] : result;
-            }
-        }
-    }
-    return (retprop) ? result[retprop] : result;
-}
-
-
 function readXmlDocument(url, callback) {
     let xmlhttp;
     if (window.XMLHttpRequest) {
@@ -215,7 +210,6 @@ function readXmlDocument(url, callback) {
     xmlhttp.setRequestHeader('Access-Control-Allow-Headers', 'Origin, Content-Type, X-Auth-Token');
     xmlhttp.send();
 }
-
 
 // ================================
 // DRAWING, HANDLING AND STUFF...
@@ -582,7 +576,6 @@ function cellSelect(event) {
         displayGlyphData(glyphIndex);
     }
 }
-
 
 function prepareGlyphList() {
     var marker = document.getElementById('glyph-list-end'),
