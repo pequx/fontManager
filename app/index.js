@@ -39,6 +39,22 @@ Object.prototype.setAttributes = function (attrs) {
     }
 };
 
+
+Object.prototype.renameProperty = function (oldName, newName) {
+    // Do nothing if the names are the same
+    if (oldName === newName) {
+        return this;
+    }
+    // Check for the old property name to avoid a ReferenceError in strict mode.
+    if (this.hasOwnProperty(oldName)) {
+        this[newName] = this[oldName];
+        this[newName].index = newName;
+        delete this[oldName];
+    }
+    return this;
+};
+
+
 function layout() {
     let container = document.createElement('div');
     // let file = document.createElement('input');
@@ -118,20 +134,6 @@ opentype.Font.prototype.tagGlyphs = function(tags) {
     // callback.call(this, Object.keys(glyphs).length);
 };
 
-Object.prototype.renameProperty = function (oldName, newName) {
-    // Do nothing if the names are the same
-    if (oldName == newName) {
-        return this;
-    }
-    // Check for the old property name to avoid a ReferenceError in strict mode.
-    if (this.hasOwnProperty(oldName)) {
-        this[newName] = this[oldName];
-        this[newName].index = newName;
-        delete this[oldName];
-    }
-    return this;
-};
-
 
 opentype.Font.prototype.filterGlyphs = function(callback) {
     let glyphs = this.glyphs.glyphs,
@@ -141,10 +143,9 @@ opentype.Font.prototype.filterGlyphs = function(callback) {
         const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hyphen|period|at|.notdef)|^[a-zA-Z]$/s;
         let match = current.name.match(regex);
         if (match === null) { continue; }
-        let indexes = [];
         if (match.length > 0) { delete glyphs[glyph]; }
     }
-    for (let glyph in glyphs) {
+    for (let glyph in glyphs) { //reindex object thingies
         glyphs.renameProperty(glyph, counter);
         counter++;
     }
@@ -286,6 +287,7 @@ function displayGlyphData(glyphIndex) {
     if (glyph.unicodes.length > 0) {
         html += '<dt>unicode</dt><dd>'+ glyph.unicodes.map(formatUnicode).join(', ') +'</dd>';
     }
+
     html += '<dt>index</dt><dd>'+glyph.index+'</dd>';
 
     if (glyph.xMin !== 0 || glyph.xMax !== 0 || glyph.yMin !== 0 || glyph.yMax !== 0) {
@@ -294,11 +296,19 @@ function displayGlyphData(glyphIndex) {
             '<dt>yMin</dt><dd>'+glyph.yMin+'</dd>' +
             '<dt>yMax</dt><dd>'+glyph.yMax+'</dd>';
     }
+
     html += '<dt>advanceWidth</dt><dd>'+glyph.advanceWidth+'</dd>';
+
     if(glyph.leftSideBearing !== undefined) {
         html += '<dt>leftSideBearing</dt><dd>'+glyph.leftSideBearing+'</dd>';
     }
+
+    if (glyph.tags.length > 0) {
+        html += '<dt>tags</dt><dd>'+ glyph.tags.map(val => val).join(', ')+'</dd>';
+    }
+
     html += '</dl>';
+
     if (glyph.numberOfContours > 0) {
         var contours = glyph.getContours();
         html += 'contours:<div id="glyph-contours">' + contours.map(contourToString).join('\n') + '</div>';
@@ -314,6 +324,7 @@ function displayGlyphData(glyphIndex) {
     } else if (glyph.path) {
         html += 'path:<br><pre>  ' + glyph.path.commands.map(pathCommandToString).join('\n  ') + '\n</pre>';
     }
+
     container.innerHTML = html;
 }
 
