@@ -154,6 +154,10 @@ a {
     &-container {
         display: flex;
         flex-wrap: wrap;
+
+        .selected {
+            background: #e0e0e0;
+        }
     }
     span {
         flex-grow: 1;

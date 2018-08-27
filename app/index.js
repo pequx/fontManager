@@ -39,7 +39,6 @@ Object.prototype.setAttributes = function (attrs) {
     }
 };
 
-
 Object.prototype.renameProperty = function (oldName, newName) {
     // Do nothing if the names are the same
     if (oldName === newName) {
@@ -134,23 +133,33 @@ function search(event) {
     if (value.length < 3 ) { return; }
 
     for (let glyph in glyphs) {
-        let current = glyphs[glyph];
-        let tags = current.tags;
-        if (!tags) { continue; }
+        let currentGlyph = glyphs[glyph];
+        let tags = currentGlyph.tags;
 
-        let match = tags.includes(value);
-        if (!match) { continue; }
-        matched.push(current);
+        let regex = new RegExp(value+'$', 'g');
+        let name = currentGlyph.name;
+        let matchName = name.match(regex);
+        if (matchName) {
+            matched.push(currentGlyph);
+        }
+
+        if (typeof tags === 'undefined') { continue; }
+
+        let matchTags = tags.includes(value);
+        if (!matchTags) { continue; }
+        matched.push(currentGlyph);
     }
 
     if (matched.length === 0) { return; }
 
     for (let glyph in matched) {
-        let current = matched[glyph];
-        if (current.index === undefined) {continue;}
-        let id = 'g'+current.index;
-        if (!current) { continue; }
+        let currentMatch = matched[glyph];
+        if (currentMatch.index === undefined) {continue;}
+        let id = 'g'+currentMatch.index;
+        if (!currentMatch) { continue; }
         let item = results.querySelector('#'+id);
+        let itemPagination = document.getElementById('pagination-container').querySelector('#'+id);
+        if (itemPagination) { itemPagination.setAttributes({'class' : 'selected'}); }
         if (item) { continue; }
         let canvas = document.createElement('canvas');
         canvas.setAttributes({'id': id, 'class' : 'item'});
@@ -158,7 +167,7 @@ function search(event) {
         canvas.height = cellHeight;
         canvas.addEventListener('click', cellSelect, false);
         results.appendChild(canvas);
-        renderGlyphItem(canvas, current.index);
+        renderGlyphItem(canvas, currentMatch.index);
     }
 }
 
