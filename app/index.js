@@ -136,6 +136,7 @@ function search(event) {
         let currentGlyph = glyphs[glyph];
         let tags = currentGlyph.tags;
 
+        //@todo: add handler for multiple name occurrences
         let regex = new RegExp(value+'$', 'g');
         let name = currentGlyph.name;
         let matchName = name.match(regex);
@@ -155,11 +156,11 @@ function search(event) {
     for (let glyph in matched) {
         let currentMatch = matched[glyph];
         if (currentMatch.index === undefined) {continue;}
-        let id = 'g'+currentMatch.index;
+        let id = 's'+currentMatch.index;
         if (!currentMatch) { continue; }
         let item = results.querySelector('#'+id);
-        let itemPagination = document.getElementById('pagination-container').querySelector('#'+id);
-        if (itemPagination) { itemPagination.setAttributes({'class' : 'selected'}); }
+        // let itemPagination = document.getElementById('pagination-container').querySelector('#'+'g'+currentMatch.index);
+        // if (itemPagination) { itemPagination.setAttributes({'class' : 'selected'}); }
         if (item) { continue; }
         let canvas = document.createElement('canvas');
         canvas.setAttributes({'id': id, 'class' : 'item'});
@@ -223,6 +224,25 @@ opentype.Font.prototype.filterGlyphs = function(callback) {
         counter++;
     }
     callback.call(this, Object.keys(glyphs).length);
+};
+
+opentype.Path.prototype.fromPathData = function(pathData, callback) {
+    const regex = {
+        'positive': /(?=[MLCQZ])/,
+        'negative': /(?<=[MLCQZ])/
+    };
+    let commands = pathData.split(regex.positive);
+    let result = [];
+
+    for (let command in commands) {
+        const check = commands.hasOwnProperty(command);
+        const current = commands[command];
+        const split =  commands[command].split(regex.negative);
+        result.push([split[0], split[1]]);
+    }
+
+    let test = 2;
+    let ja = 2;
 };
 
 opentype.load(fontFileName, function(err, font) {
@@ -333,9 +353,12 @@ function displayGlyphData(glyphIndex) {
         container.innerHTML = '';
         return;
     }
-    var glyph = window.font.glyphs.get(glyphIndex),
+
+    let glyph = window.font.glyphs.get(glyphIndex),
         html = '<dl>';
     html += '<dt>name</dt><dd>'+glyph.name+'</dd>';
+
+    console.log(glyph);
 
     if (glyph.unicodes.length > 0) {
         html += '<dt>unicode</dt><dd>'+ glyph.unicodes.map(formatUnicode).join(', ') +'</dd>';
@@ -380,6 +403,8 @@ function displayGlyphData(glyphIndex) {
 
     container.innerHTML = html;
 }
+
+
 
 
 function renderGlyphItem(canvas, glyphIndex) {
