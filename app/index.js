@@ -130,60 +130,27 @@ function search(event) {
     let value = event.target.value;
     let results = document.getElementById('search-results');
     let matched = [];
-    // let count = {'glyphs': 0, 'tags': 0};
 
     if (value.length < 3 ) { return; }
 
     for (let glyph in glyphs) {
-        let currentGlyph = glyphs[glyph];
-        let tags = currentGlyph.tags;
-        if (!tags) {
-            // if (currentGlyph.name.indexOf(value) === 0) {
-            //     // matched[name] = {
-            //     //     'glyph': parseInt(glyph)
-            //     // };
-            //     matched.push({name: {'glyph': id}});
-            // }
-            continue;
-        }
+        let current = glyphs[glyph];
+        let tags = current.tags;
+        if (!tags) { continue; }
 
-        const match = tags.includes(value);
+        let match = tags.includes(value);
         if (!match) { continue; }
-        matched.push(currentGlyph);
-        // for (let i = 0; i < tags.length; i++) {
-        //     let currentTag = tags[i],
-        //         position = currentTag.indexOf(value),
-        //         count = 0;
-        //     if (position === 0) {
-        //         count++;
-        //         // count.glyps++
-        //         matched.push({currentTag: {count, currentGlyph}});
-        //     }
-
-            // while (position !== -1) {
-            //     count++;
-            //     matched.push({currentTag: {'glyph': currentGlyph, 'count': count}});
-            //     let position = currentTag.indexOf(value, position + 1);
-            // }
-
-            // if (currentTag.indexOf(value) === 0) {
-                // matched[currentTag] = {
-                //     'glyph': glyph
-                // };
-                // matched.length++;
-                // matched.push(tag);
-            // }
-
-        // }
+        matched.push(current);
     }
 
     if (matched.length === 0) { return; }
 
     for (let glyph in matched) {
-        let current = matched[glyph],
-            id = 'g'+current;
+        let current = matched[glyph];
+        if (current.index === undefined) {continue;}
+        let id = 'g'+current.index;
         if (!current) { continue; }
-        let item = document.getElementById(id);
+        let item = results.querySelector('#'+id);
         if (item) { continue; }
         let canvas = document.createElement('canvas');
         canvas.setAttributes({'id': id, 'class' : 'item'});
@@ -191,7 +158,7 @@ function search(event) {
         canvas.height = cellHeight;
         canvas.addEventListener('click', cellSelect, false);
         results.appendChild(canvas);
-        renderGlyphItem(canvas, currentMatch);
+        renderGlyphItem(canvas, current.index);
     }
 }
 
@@ -217,12 +184,14 @@ opentype.Font.prototype.tagGlyphs = function(tags) {
         if (current.unicode === undefined) { continue; }
 
         for (let tag in tags) {
+            // if (!tags) { current.addTags()}
             let currentTag = tags[tag];
             if (parseInt(currentTag.unicode, 16) === current.unicode) {
                 current.addTags(currentTag.search.terms, currentTag.label);
             }
         }
     }
+    let test = 2;
     // callback.call(this, Object.keys(glyphs).length);
 };
 
