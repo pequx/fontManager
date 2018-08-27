@@ -186,10 +186,15 @@ a {
             display: flex;
             flex-direction: row;
         }
-    }
 
-    .item {
-        flex-grow: 1;
+        .item {
+            background-color: #e0e0e0;
+            flex-grow: 1;
+
+            &:hover {
+                background-color: #fff;
+            }
+        }
     }
 }
 

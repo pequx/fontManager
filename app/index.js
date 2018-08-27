@@ -130,54 +130,70 @@ function search(event) {
     let value = event.target.value;
     let results = document.getElementById('search-results');
     let matched = [];
+    // let count = {'glyphs': 0, 'tags': 0};
 
     if (value.length < 3 ) { return; }
 
     for (let glyph in glyphs) {
-        let currentGlyph = glyphs[glyph],
-            tags = currentGlyph.tags;
-        if (!tags) { continue; }
-
-        for (let i = 0; i < tags.length; i++) {
-            let tag = tags[i];
-            if (tag.indexOf(value) === 0) {
-                matched[tag] = {
-                    'glyph': parseInt(glyph)
-                };
-            }
+        let currentGlyph = glyphs[glyph];
+        let tags = currentGlyph.tags;
+        if (!tags) {
+            // if (currentGlyph.name.indexOf(value) === 0) {
+            //     // matched[name] = {
+            //     //     'glyph': parseInt(glyph)
+            //     // };
+            //     matched.push({name: {'glyph': id}});
+            // }
+            continue;
         }
+
+        const match = tags.includes(value);
+        if (!match) { continue; }
+        matched.push(currentGlyph);
+        // for (let i = 0; i < tags.length; i++) {
+        //     let currentTag = tags[i],
+        //         position = currentTag.indexOf(value),
+        //         count = 0;
+        //     if (position === 0) {
+        //         count++;
+        //         // count.glyps++
+        //         matched.push({currentTag: {count, currentGlyph}});
+        //     }
+
+            // while (position !== -1) {
+            //     count++;
+            //     matched.push({currentTag: {'glyph': currentGlyph, 'count': count}});
+            //     let position = currentTag.indexOf(value, position + 1);
+            // }
+
+            // if (currentTag.indexOf(value) === 0) {
+                // matched[currentTag] = {
+                //     'glyph': glyph
+                // };
+                // matched.length++;
+                // matched.push(tag);
+            // }
+
+        // }
     }
 
-    for (let match in matched) {
-        let currentMatch = matched[match].glyph;
-        let id = 'g'+currentMatch;
-        if (!currentMatch) { continue; }
+    if (matched.length === 0) { return; }
+
+    for (let glyph in matched) {
+        let current = matched[glyph],
+            id = 'g'+current;
+        if (!current) { continue; }
         let item = document.getElementById(id);
         if (item) { continue; }
         let canvas = document.createElement('canvas');
         canvas.setAttributes({'id': id, 'class' : 'item'});
-        results.appendChild(canvas);
-
+        canvas.width = cellWidth;
+        canvas.height = cellHeight;
         canvas.addEventListener('click', cellSelect, false);
+        results.appendChild(canvas);
         renderGlyphItem(canvas, currentMatch);
     }
-};
-
-let searchResults;
-
-// function hideGlyphItem(canvas, glyphIndex) {
-//     // console.log(glyphIndex);
-//     let collection = document.getElementsByClassName('item');
-//     for (let item in collection) {
-//         let current = collection[item],
-//             id = 'g'+glyphIndex;
-//         if (current.id !== id) {
-//             let results = document.getElementById('search-results');
-//         }
-//     }
-//     searchResults = collection;
-//     console.log(searchResults);
-// }
+}
 
 // ================================
 // INIT
@@ -210,6 +226,10 @@ opentype.Font.prototype.tagGlyphs = function(tags) {
     // callback.call(this, Object.keys(glyphs).length);
 };
 
+/**
+ * Method removes non-ideogram glyphs
+ * @param callback
+ */
 opentype.Font.prototype.filterGlyphs = function(callback) {
     let glyphs = this.glyphs.glyphs,
         counter = 0;
@@ -226,7 +246,6 @@ opentype.Font.prototype.filterGlyphs = function(callback) {
     }
     callback.call(this, Object.keys(glyphs).length);
 };
-
 
 opentype.load(fontFileName, function(err, font) {
     let amount, glyph, ctx, x, y, fontSize, tags;
@@ -536,16 +555,17 @@ function pageSelect(event) {
 
 
 function initGlyphDisplay() {
-    var glyphBgCanvas = document.getElementById('glyph-bg'),
+    const glyphBgCanvas = document.getElementById('glyph-bg'),
         w = glyphBgCanvas.width / pixelRatio,
         h = glyphBgCanvas.height / pixelRatio,
-        glyphW = w - glyphMargin*2,
+        // glyphW = w - glyphMargin*2,
         glyphH = h - glyphMargin*2,
         head = window.font.tables.head,
         maxHeight = head.yMax - head.yMin,
         ctx = glyphBgCanvas.getContext('2d');
 
-    glyphScale = Math.min(glyphW/(head.xMax - head.xMin), glyphH/maxHeight);
+    // glyphScale = Math.min(glyphW/(head.xMax - head.xMin), glyphH/maxHeight);
+    glyphScale = Math.min(w/maxHeight, h/maxHeight)/1.666;
     glyphSize = glyphScale * window.font.unitsPerEm;
     glyphBaseline = glyphMargin + glyphH * head.yMax / maxHeight;
 
@@ -558,12 +578,12 @@ function initGlyphDisplay() {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#a0a0a0';
     hline('Baseline', 0);
-    hline('yMax', window.font.tables.head.yMax);
-    hline('yMin', window.font.tables.head.yMin);
+    // hline('yMax', window.font.tables.head.yMax);
+    // hline('yMin', window.font.tables.head.yMin);
     hline('Ascender', window.font.tables.hhea.ascender);
     hline('Descender', window.font.tables.hhea.descender);
-    hline('Typo Ascender', window.font.tables.os2.sTypoAscender);
-    hline('Typo Descender', window.font.tables.os2.sTypoDescender);
+    // hline('Typo Ascender', window.font.tables.os2.sTypoAscender);
+    // hline('Typo Descender', window.font.tables.os2.sTypoDescender);
 }
 
 
