@@ -233,26 +233,41 @@ opentype.Font.prototype.filterGlyphs = function(callback) {
 };
 
 /**
- * Method converts svg path into glyph drawing commands
+ * Method to add a glypn into curretnly loaded font
  * @param pathData
  * @param callback
  */
-opentype.Path.prototype.fromPathData = function(pathData, callback) {
+opentype.Font.prototype.appendGlyph = function(pathData, callback) {
     const regex = {
         'positive': /(?=[MLCQZ])/,
         'negative': /(?<=[MLCQZ])/
     };
     let commands = pathData.split(regex.positive);
-    let result = [];
+    let result = {};
 
+    let counter = 0;
     for (let command in commands) {
         if (commands.hasOwnProperty(command)) {
-            const check = commands.hasOwnProperty(command);
-            const current = commands[command];
-            const split =  commands[command].split(regex.negative);
-            result.push([split[0], split[1]]);
+            const command =  commands[command].split(regex.negative);
+            // result[counter] = {type: split[0], commands: split[1]};
+            // counter++;
+            if (command[0] === 'M') {
+                path.moveTo(cmd.x, cmd.y);
+            } else if (split[0] === 'L') {
+                command.lineTo(cmd.x, cmd.y);
+            } else if (split[0] === 'C') {
+                command.bezierCurveTo(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+            } else if (split[0] === 'Q') {
+                command.quadraticCurveTo(cmd.x1, cmd.y1, cmd.x, cmd.y);
+            } else if (split[0] === 'Z') {
+                command.closePath();
+            }
         }
     }
+    const test = result;
+
+    let path = new opentype.Path();
+
 };
 
 /**
