@@ -137,6 +137,7 @@ function search(event) {
         let tags = currentGlyph.tags;
 
         //@todo: add handler for multiple name occurrences
+        //@todo: handle the issue when user search for the already presented stuff
         let regex = new RegExp(value+'$', 'g');
         let name = currentGlyph.name;
         let matchName = name.match(regex);
@@ -226,6 +227,11 @@ opentype.Font.prototype.filterGlyphs = function(callback) {
     callback.call(this, Object.keys(glyphs).length);
 };
 
+/**
+ * Method converts svg path into glyph drawing commands
+ * @param pathData
+ * @param callback
+ */
 opentype.Path.prototype.fromPathData = function(pathData, callback) {
     const regex = {
         'positive': /(?=[MLCQZ])/,
@@ -235,16 +241,18 @@ opentype.Path.prototype.fromPathData = function(pathData, callback) {
     let result = [];
 
     for (let command in commands) {
-        const check = commands.hasOwnProperty(command);
-        const current = commands[command];
-        const split =  commands[command].split(regex.negative);
-        result.push([split[0], split[1]]);
+        if (commands.hasOwnProperty(command)) {
+            const check = commands.hasOwnProperty(command);
+            const current = commands[command];
+            const split =  commands[command].split(regex.negative);
+            result.push([split[0], split[1]]);
+        }
     }
-
-    let test = 2;
-    let ja = 2;
 };
 
+/**
+ * Method loads the font from a file at given location
+ */
 opentype.load(fontFileName, function(err, font) {
     let amount, glyph, ctx, x, y, fontSize, tags;
     if (err) {
@@ -262,12 +270,15 @@ opentype.load(fontFileName, function(err, font) {
     });
 });
 
-
 enableHighDPICanvas('glyph-bg');
 enableHighDPICanvas('glyph');
 prepareGlyphList();
 
-
+/**
+ * Method reads the font file
+ * @param url
+ * @param callback
+ */
 function readXmlDocument(url, callback) {
     let xmlhttp;
     if (window.XMLHttpRequest) {
@@ -294,6 +305,10 @@ function readXmlDocument(url, callback) {
 // DRAWING, HANDLING AND STUFF...
 // ================================
 
+/**
+ * Sets retina canvas support
+ * @param canvas
+ */
 function enableHighDPICanvas(canvas) {
     if (typeof canvas === 'string') {
         canvas = document.getElementById(canvas);
@@ -308,7 +323,6 @@ function enableHighDPICanvas(canvas) {
     canvas.style.height = oldHeight + 'px';
     canvas.getContext('2d').scale(pixelRatio, pixelRatio);
 }
-
 
 function showErrorMessage(message) {
     var el = document.getElementById('message');
@@ -406,7 +420,6 @@ function displayGlyphData(glyphIndex) {
 
 
 
-
 function renderGlyphItem(canvas, glyphIndex) {
     var cellMarkSize = 4;
     var ctx = canvas.getContext('2d');
@@ -443,10 +456,8 @@ function displayGlyphPage(pageNum) {
     }
 }
 
-
 const arrowLength = 10,
     arrowAperture = 4;
-
 
 function drawArrow(ctx, x1, y1, x2, y2) {
     const dx = x2 - x1,
