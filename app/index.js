@@ -214,16 +214,21 @@ opentype.Font.prototype.filterGlyphs = function(callback) {
     let glyphs = this.glyphs.glyphs,
         counter = 0;
     for (let glyph in glyphs) {
+        if (!glyphs.hasOwnProperty(glyph)) { continue; }
         let current = glyphs[glyph];
-        const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hyphen|period|at|.notdef)|^[a-zA-Z]$/s;
+        const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hyphen|period|at)|^[a-zA-Z]$/s;
         let match = current.name.match(regex);
         if (match === null) { continue; }
         if (match.length > 0) { delete glyphs[glyph]; }
     }
     for (let glyph in glyphs) { //reindex object thingies
-        glyphs.renameProperty(glyph, counter);
-        counter++;
+        if (glyphs.hasOwnProperty(glyph)) {
+            if (glyph === '0') { counter++; continue; }
+            glyphs.renameProperty(glyph, counter);
+            counter++;
+        }
     }
+
     callback.call(this, Object.keys(glyphs).length);
 };
 
