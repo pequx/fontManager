@@ -240,33 +240,57 @@ opentype.Font.prototype.filterGlyphs = function(callback) {
 opentype.Font.prototype.appendGlyph = function(pathData, callback) {
     const regex = {
         'positive': /(?=[MLCQZ])/,
-        'negative': /(?<=[MLCQZ])/
+        'negative': /(?<=[MLCQZ])/,
+        'coordinates': / |(?=-)/
     };
-    let commands = pathData.split(regex.positive);
-    let result = {};
+    let splitData = pathData.split(regex.positive);
 
-    let counter = 0;
-    for (let command in commands) {
-        if (commands.hasOwnProperty(command)) {
-            const command =  commands[command].split(regex.negative);
-            // result[counter] = {type: split[0], commands: split[1]};
-            // counter++;
-            if (command[0] === 'M') {
-                path.moveTo(cmd.x, cmd.y);
-            } else if (split[0] === 'L') {
-                command.lineTo(cmd.x, cmd.y);
-            } else if (split[0] === 'C') {
-                command.bezierCurveTo(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
-            } else if (split[0] === 'Q') {
-                command.quadraticCurveTo(cmd.x1, cmd.y1, cmd.x, cmd.y);
-            } else if (split[0] === 'Z') {
-                command.closePath();
+    function splitCommand(command) {
+        const result = command.split(regex.negative);
+        return {type: result[0], coordinates: result[1]};
+    }
+
+    function splitCoordinates(coordinates) {
+        if (typeof coordinates === 'undefined') { return; }
+        let result = coordinates.split(regex.coordinates);
+
+        for (let element in result) {
+            if (split.hasOwnProperty(element)) {
+                split[element] = parseFloat(split[element]);
+            }
+        }
+
+        if (split.length = 6) {
+            return {x1: result[0], y1: result[1], x2: result[2], y2: result[3], x: result[4], y: result[5]}
+        } else if (split.length = 4) {
+            return {x1: result[0], y1: result[1], x: result[2], y: result[3]}
+        } else {
+            return {x: result[0], y: result[1]}
+        }
+    }
+
+    let path = new opentype.Path();
+
+    for (let element in splitData) {
+        if (splitData.hasOwnProperty(element)) {
+            const command = splitCommand(splitData[element]),
+                coordinates = splitCoordinates(command.coordinates);
+
+            if (command.type === 'M') {
+                path.moveTo(coordinates.x, coordinates.y);
+            } else if (command.type === 'L') {
+                path.lineTo(coordinates.x, coordinates.y);
+            } else if (command.type === 'C') {
+                path.bezierCurveTo(coordinates.x1, coordinates.y1, coordinates.x2, coordinates.y2, coordinates.x, coordinates.y);
+            } else if (command.type === 'Q') {
+                path.quadraticCurveTo(coordinates.x1, coordinates.y1, coordinates.x, coordinates.y);
+            } else if (command.type === 'Z') {
+                path.closePath();
             }
         }
     }
-    const test = result;
-
-    let path = new opentype.Path();
+    let test2 =2;
+    const test = 2;
 
 };
 
