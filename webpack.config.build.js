@@ -5,8 +5,6 @@ const CopyWebpackPlugin = reqire('copy-webpack-plugin');
 const SshWebpackPlugin = require('ssh-webpack-plugin');
 const webpackConfig = require('./webpack.config');
 
-const shhPassword = process.env.arg
-
 module.exports = merge(webpackConfig, {
 
     devtool: 'source-map',
