@@ -26,7 +26,7 @@ let pageSelected, font, fontScale, fontSize, fontBaseline, glyphScale, glyphSize
 // HELPERS
 // ================================
 
-Object.prototype.setAttributes = function (attrs) {
+HTMLElement.prototype.setAttributes = function (attrs) {
     for (var idx in attrs) {
         //@todo: add has own property check
         if ((idx === 'styles' || idx === 'style') && typeof attrs[idx] === 'object') {
@@ -37,20 +37,6 @@ Object.prototype.setAttributes = function (attrs) {
             this.setAttribute(idx, attrs[idx]);
         }
     }
-};
-
-Object.prototype.renameProperty = function (oldName, newName) {
-    // Do nothing if the names are the same
-    if (oldName === newName) {
-        return this;
-    }
-    // Check for the old property name to avoid a ReferenceError in strict mode.
-    if (this.hasOwnProperty(oldName)) {
-        this[newName] = this[oldName];
-        this[newName].index = newName;
-        delete this[oldName];
-    }
-    return this;
 };
 
 // ================================
@@ -212,32 +198,49 @@ opentype.Font.prototype.tagGlyphs = function(tags) {
  */
 opentype.Font.prototype.filterGlyphs = function(callback) {
     let glyphs = this.glyphs.glyphs,
-        counter = 0;
+        counter = 0,
+        deletedCounter = 0,
+        orginalCounter = this.glyphs.length;
+
+    //this removes unwanted glyphs from font, DO NOT remove .notdef, it's needed.
     for (let glyph in glyphs) {
-        if (!glyphs.hasOwnProperty(glyph)) { continue; }
-        let current = glyphs[glyph];
-        const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hyphen|period|at)|^[a-zA-Z]$/s;
-        let match = current.name.match(regex);
-        if (match === null) { continue; }
-        if (match.length > 0) { delete glyphs[glyph]; }
-    }
-    for (let glyph in glyphs) { //reindex object thingies
         if (glyphs.hasOwnProperty(glyph)) {
-            if (glyph === '0') { counter++; continue; }
-            glyphs.renameProperty(glyph, counter);
+            let current = glyphs[glyph];
+            const regex = /(zero|one|two|three|four|five|six|seven|eight|nine|space|hyphen|period|at)|^[a-zA-Z]$/s;
+            let match = current.name.match(regex);
+            if (match === null) { continue; }
+            if (match.length > 0) { delete glyphs[glyph]; deletedCounter++; }
+        }
+    }
+
+    //this fixes enumeration problems, as js is so fancy that it behaves like assembler lol
+    let processed = [];
+    for (let glyph in glyphs) {
+        if (glyphs.hasOwnProperty(glyph)) {
+            let newCurrent = glyphs[glyph];
+            newCurrent.index = counter;
+            processed.push(newCurrent);
+            delete glyphs[glyph];
             counter++;
         }
     }
 
-    callback.call(this, Object.keys(glyphs).length);
+    //at least we don't have to write into ALU register :D
+    if (deletedCounter + counter !== orginalCounter) { return; }
+
+    this.glyphs.glyphs = Object.assign({}, processed);
+    this.glyphs.length = counter;
+
+    callback.call(this, counter);
 };
 
 /**
  * Method to add a glypn into curretnly loaded font
  * @param pathData
+ * @param glyphData
  * @param callback
  */
-opentype.Font.prototype.appendGlyph = function(pathData, callback) {
+opentype.Font.prototype.appendGlyph = function(pathData, glyphData, callback) {
     const regex = {
         'positive': /(?=[MLCQZ])/,
         'negative': /(?<=[MLCQZ])/,
@@ -255,16 +258,16 @@ opentype.Font.prototype.appendGlyph = function(pathData, callback) {
         let result = coordinates.split(regex.coordinates);
 
         for (let element in result) {
-            if (split.hasOwnProperty(element)) {
-                split[element] = parseFloat(split[element]);
+            if (result.hasOwnProperty(element)) {
+                result[element] = parseFloat(result[element]);
             }
         }
 
-        if (split.length = 6) {
+        if (result.length === 6) {
             return {x1: result[0], y1: result[1], x2: result[2], y2: result[3], x: result[4], y: result[5]}
-        } else if (split.length = 4) {
+        } else if (result.length === 4) {
             return {x1: result[0], y1: result[1], x: result[2], y: result[3]}
-        } else {
+        } else if (result.length === 2) {
             return {x: result[0], y: result[1]}
         }
     }
@@ -289,9 +292,29 @@ opentype.Font.prototype.appendGlyph = function(pathData, callback) {
             }
         }
     }
-    let test2 =2;
-    const test = 2;
 
+    //i don't belive this. yay js, so modern, so declarative.
+    let { [Object.keys(this.glyphs.glyphs).pop()]: lastGlyph } = this.glyphs.glyphs,
+        // newGlyph = this.glyphs.glyphs[lastGlyph.index+1];
+        newGlyph = new opentype.Glyph({
+            advanceWidth: 512,
+            name: glyphData.name,
+            unitsPerEm: 512,
+            leftSideBearing: 0,
+            label: 'siusiak',
+            // unicode: lastGlyph.unicode + 1,
+            path: path,
+            index: lastGlyph.index + 1
+        });
+
+    newGlyph.addUnicode(lastGlyph.unicode + 1);
+
+    this.glyphs.glyphs[lastGlyph.index+1] = newGlyph;
+    this.nGlyphs = this.numGlyphs = this.numberOfHMetrics = this.glyphs.length + 1;
+
+    console.log(this.glyphs.glyphs[lastGlyph.index+1]);
+
+    // callback.call(this, newGlyph);
 };
 
 /**
@@ -309,9 +332,20 @@ opentype.load(fontFileName, function(err, font) {
             this.nGlyphs = this.numGlyphs = this.numberOfHMetrics = callback;
             this.glyphs.length = callback;
         });
-        font.tagGlyphs(tags);
+        const path = 'M502 390L280 168L280-15L344-15C355.333328247070313-15 364.833328247070313-18.833328247070313 372.500000000000000-26.500000000000000C380.166671752929688-34.166671752929688 384-43.666671752929688 384-55C384-57 383.166671752929688-58.833328247070313 381.500000000000000-60.500000000000000C379.833328247070313-62.166671752929688 378-63 376-63L136-63C134-63 132.166671752929688-62.166671752929688 130.500000000000000-60.500000000000000C128.833328247070313-58.833328247070313 128-57 128-55C128-43.666671752929688 131.833328247070313-34.166671752929688 139.500000000000000-26.500000000000000C147.166671752929688-18.833328247070313 156.666671752929688-15 168-15L232-15L232 168L10 390C3.333328247070313 397.333328247070313 0 405.500000000000000 0 414.500000000000000C0 423.500000000000000 3.166671752929688 431.333328247070313 9.500000000000000 438C15.833328247070313 444.666671752929688 24 448 34 448L478 448C488 448 496.166671752929688 444.666671752929688 502.500000000000000 438C508.833328247070313 431.333328247070313 512 423.500000000000000 512 414.500000000000000C512 405.500000000000000 508.666671752929688 397.333328247070313 502 390ZM256 212L444 400L68 400Z';
+        font.appendGlyph(path, {name: 'wurst'});
+
+        // font.tagGlyphs(tags);
+
+        let path1 = font.glyphs.glyphs[1].path,
+            path2 = font.glyphs.glyphs[910].path,
+            comparision = JSON.stringify(font.glyphs.glyphs[1].path) === JSON.stringify(font.glyphs.glyphs[910].path);
+            // test = font.toTables();
+
+        // font.download();
         onFontLoaded(font);
     });
+
 });
 
 enableHighDPICanvas('glyph-bg');
@@ -437,7 +471,7 @@ function displayGlyphData(glyphIndex) {
         html += '<dt>leftSideBearing</dt><dd>'+glyph.leftSideBearing+'</dd>';
     }
 
-    if (glyph.tags.length > 0) {
+    if (typeof glyph.tags !== 'undefined' && glyph.tags.length > 0) {
         html += '<dt>tags</dt><dd>'+ glyph.tags.map(val => val).join(', ')+'</dd>';
     }
 
