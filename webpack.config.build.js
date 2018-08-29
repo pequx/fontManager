@@ -1,6 +1,7 @@
 const path = require('path');
 const merge = require('webpack-merge');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const CopyWebpackPlugin = reqire('copy-webpack-plugin');
 const webpackConfig = require('./webpack.config');
 
 module.exports = merge(webpackConfig, {
@@ -13,7 +14,17 @@ module.exports = merge(webpackConfig, {
     },
 
     plugins: [
-        new CleanWebpackPlugin(['dist'])
+        new CleanWebpackPlugin(['dist']),
+        new CopyWebpackPlugin([
+            {
+                from: path.join(__dirname, 'assets/fonts/*'),
+                to: path.join(__dirname, 'dist/assets/fonts')
+            },
+            {
+                from: path.join(__dirname, 'assets/tags/*'),
+                to: path.join(__dirname, 'dist/assets/fonts')
+            }
+        ])
     ]
 
 });

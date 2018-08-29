@@ -164,7 +164,7 @@ function search(event) {
 // ================================
 
 const fontFileName = './assets/fonts/font.otf';
-const tagsFileName = 'http://0.0.0.0:8080/assets/tags/icons.json';
+const tagsFileName = './assets/tags/icons.json';
 document.getElementById('font-name').innerHTML = fontFileName.split('/')[3];
 // var fileButton = document.getElementById('file');
 // fileButton.addEventListener('change', onReadFile, false);
@@ -177,14 +177,18 @@ opentype.Glyph.prototype.addTags = function(tags, label) {
 opentype.Font.prototype.tagGlyphs = function(tags) {
     let glyphs = this.glyphs.glyphs;
     for (let glyph in glyphs) {
-        let current = glyphs[glyph];
-        if (current.unicode === undefined) { continue; }
+        if (glyphs.hasOwnProperty(glyph)) {
+            let current = glyphs[glyph];
+            if (current.unicode === undefined) { continue; }
 
-        for (let tag in tags) {
-            // if (!tags) { current.addTags()}
-            let currentTag = tags[tag];
-            if (parseInt(currentTag.unicode, 16) === current.unicode) {
-                current.addTags(currentTag.search.terms, currentTag.label);
+            for (let tag in tags) {
+                // if (!tags) { current.addTags()}
+                if (tags.hasOwnProperty(tag)) {
+                    let currentTag = tags[tag];
+                    if (parseInt(currentTag.unicode, 16) === current.unicode) {
+                        current.addTags(currentTag.search.terms, currentTag.label);
+                    }
+                }
             }
         }
     }
@@ -335,7 +339,7 @@ opentype.load(fontFileName, function(err, font) {
         const path = 'M502 390L280 168L280-15L344-15C355.333328247070313-15 364.833328247070313-18.833328247070313 372.500000000000000-26.500000000000000C380.166671752929688-34.166671752929688 384-43.666671752929688 384-55C384-57 383.166671752929688-58.833328247070313 381.500000000000000-60.500000000000000C379.833328247070313-62.166671752929688 378-63 376-63L136-63C134-63 132.166671752929688-62.166671752929688 130.500000000000000-60.500000000000000C128.833328247070313-58.833328247070313 128-57 128-55C128-43.666671752929688 131.833328247070313-34.166671752929688 139.500000000000000-26.500000000000000C147.166671752929688-18.833328247070313 156.666671752929688-15 168-15L232-15L232 168L10 390C3.333328247070313 397.333328247070313 0 405.500000000000000 0 414.500000000000000C0 423.500000000000000 3.166671752929688 431.333328247070313 9.500000000000000 438C15.833328247070313 444.666671752929688 24 448 34 448L478 448C488 448 496.166671752929688 444.666671752929688 502.500000000000000 438C508.833328247070313 431.333328247070313 512 423.500000000000000 512 414.500000000000000C512 405.500000000000000 508.666671752929688 397.333328247070313 502 390ZM256 212L444 400L68 400Z';
         font.appendGlyph(path, {name: 'wurst'});
 
-        // font.tagGlyphs(tags);
+        font.tagGlyphs(tags);
 
         let path1 = font.glyphs.glyphs[1].path,
             path2 = font.glyphs.glyphs[910].path,
