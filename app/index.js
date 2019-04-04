@@ -277,7 +277,6 @@ opentype.Font.prototype.appendGlyph = function(pathData, glyphData, callback) {
     }
 
     let path = new opentype.Path();
-
     for (let element in splitData) {
         if (splitData.hasOwnProperty(element)) {
             const command = splitCommand(splitData[element]),
@@ -296,27 +295,26 @@ opentype.Font.prototype.appendGlyph = function(pathData, glyphData, callback) {
             }
         }
     }
+    console.log(path);
 
-    //i don't belive this. yay js, so modern, so declarative.
     let { [Object.keys(this.glyphs.glyphs).pop()]: lastGlyph } = this.glyphs.glyphs,
         // newGlyph = this.glyphs.glyphs[lastGlyph.index+1];
         newGlyph = new opentype.Glyph({
-            advanceWidth: 512,
             name: glyphData.name,
-            unitsPerEm: 512,
-            leftSideBearing: 0,
-            label: 'siusiak',
-            // unicode: lastGlyph.unicode + 1,
-            path: path,
-            index: lastGlyph.index + 1
+            unicode: undefined,
+            advanceWidth: 512
         });
+    newGlyph.path = path;
+    newGlyph.leftSideBearing = 0;
+    newGlyph.index = lastGlyph.index+1;
 
-    newGlyph.addUnicode(lastGlyph.unicode + 1);
+    // newGlyph.addUnicode(lastGlyph.unicode + 1);
 
     this.glyphs.glyphs[lastGlyph.index+1] = newGlyph;
     this.nGlyphs = this.numGlyphs = this.numberOfHMetrics = this.glyphs.length + 1;
 
-    console.log(this.glyphs.glyphs[lastGlyph.index+1]);
+    const result = this.glyphs.glyphs[lastGlyph.index+1].getPath();
+    console.log(result);
 
     // callback.call(this, newGlyph);
 };
@@ -337,7 +335,7 @@ opentype.load(fontFileName, function(err, font) {
             this.glyphs.length = callback;
         });
         const path = 'M502 390L280 168L280-15L344-15C355.333328247070313-15 364.833328247070313-18.833328247070313 372.500000000000000-26.500000000000000C380.166671752929688-34.166671752929688 384-43.666671752929688 384-55C384-57 383.166671752929688-58.833328247070313 381.500000000000000-60.500000000000000C379.833328247070313-62.166671752929688 378-63 376-63L136-63C134-63 132.166671752929688-62.166671752929688 130.500000000000000-60.500000000000000C128.833328247070313-58.833328247070313 128-57 128-55C128-43.666671752929688 131.833328247070313-34.166671752929688 139.500000000000000-26.500000000000000C147.166671752929688-18.833328247070313 156.666671752929688-15 168-15L232-15L232 168L10 390C3.333328247070313 397.333328247070313 0 405.500000000000000 0 414.500000000000000C0 423.500000000000000 3.166671752929688 431.333328247070313 9.500000000000000 438C15.833328247070313 444.666671752929688 24 448 34 448L478 448C488 448 496.166671752929688 444.666671752929688 502.500000000000000 438C508.833328247070313 431.333328247070313 512 423.500000000000000 512 414.500000000000000C512 405.500000000000000 508.666671752929688 397.333328247070313 502 390ZM256 212L444 400L68 400Z';
-        font.appendGlyph(path, {name: 'wurst'});
+        font.appendGlyph(path, {name: 'test'});
 
         font.tagGlyphs(tags);
 
